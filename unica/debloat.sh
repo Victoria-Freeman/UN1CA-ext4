@@ -333,3 +333,44 @@ system/etc/sysconfig/feature-a11y-preload-voacc.xml
 PRODUCT_DEBLOAT+="
 app/YouTube
 "
+
+# ====== CUSTOM DEBLOAT TO SAVE SPACE ======
+
+# Samsung Internet/Browser
+SYSTEM_DEBLOAT+="
+system/preload/SBrowser
+"
+
+# Bixby
+SYSTEM_DEBLOAT+="
+system/app/BixbyWakeup
+system/priv-app/Bixby
+system/priv-app/BixbyVisionFramework3.5
+system/priv-app/BixbyInterpreter
+"
+
+# Unused fonts
+SYSTEM_DEBLOAT+="$(find "$WORK_DIR/system" -type f -path "*/fonts/*" | grep -iE "(Chinese|Japanese|Korean|Arabic|Thai|Hindi)" | sed "s|$WORK_DIR/system/||g")"
+
+# Unused wallpapers
+SYSTEM_DEBLOAT+="$(find "$WORK_DIR/system" -type f -path "*/wallpaper/*" | tail -n +5 | sed "s|$WORK_DIR/system/||g")"
+
+# Samsung Health stub
+SYSTEM_DEBLOAT+="
+system/app/SHealth
+"
+
+# Samsung Notes
+SYSTEM_DEBLOAT+="
+system/app/Notes
+"
+
+# OMCAgent5
+SYSTEM_DEBLOAT+="
+system/priv-app/OMCAgent5
+"
+
+# Google
+PRODUCT_DEBLOAT+="
+priv-app/Velvet
+"
