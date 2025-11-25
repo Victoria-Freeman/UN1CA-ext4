@@ -12,3 +12,5 @@ security/unica_platform.pk8
 !.gitattributes
 !.gitignore
 !.gitmodules
+
+logs
