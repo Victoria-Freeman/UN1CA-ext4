@@ -5,8 +5,8 @@ Subject: [PATCH] Introduce FloatingFeatureHooks
 
 ---
  .../android/feature/SemFloatingFeature.smali  | 106 ++++-
- .../mesalabs/unica/FloatingFeatureHooks.smali | 394 ++++++++++++++++++
- 2 files changed, 485 insertions(+), 15 deletions(-)
+ .../mesalabs/unica/FloatingFeatureHooks.smali | 396 ++++++++++++++++++
+ 2 files changed, 487 insertions(+), 15 deletions(-)
  create mode 100644 smali_classes6/io/mesalabs/unica/FloatingFeatureHooks.smali
 
 diff --git a/smali_classes6/com/samsung/android/feature/SemFloatingFeature.smali b/smali_classes6/com/samsung/android/feature/SemFloatingFeature.smali
@@ -246,7 +246,7 @@ new file mode 100644
 index 00000000..c8afba57
 --- /dev/null
 +++ b/smali_classes6/io/mesalabs/unica/FloatingFeatureHooks.smali
-@@ -0,0 +1,394 @@
+@@ -0,0 +1,396 @@
 +.class public final Lio/mesalabs/unica/FloatingFeatureHooks;
 +.super Ljava/lang/Object;
 +.source "FloatingFeatureHooks.java"
@@ -391,6 +391,8 @@ index 00000000..c8afba57
 +
 +    :cond_1
 +    const-string v0, "SEC_FLOATING_FEATURE_LCD_CONFIG_AOD_FULLSCREEN"
++
++    const/4 v4, 0x1
 +
 +    invoke-static {v4}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
 +
