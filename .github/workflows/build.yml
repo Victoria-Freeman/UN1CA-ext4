@@ -21,6 +21,10 @@ jobs:
         target: [a52sxq, a53x, a73xq, b0q, g0q, m52xq, o1s, p3s, r0q, r9s, t2s]
 
     steps:
+      - name: Set Swap Space
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 0.1
       - name: Checkout repo
         uses: actions/checkout@v6
         with:
@@ -81,3 +85,32 @@ jobs:
         run: |
           source ./buildenv.sh ${{ matrix.target }}
           ./scripts/make_rom.sh
+
+      - name: Get ZIP filename
+        id: get_filename
+        run: |
+          source ./buildenv.sh ${{ matrix.target }}
+          ZIP_FILE=$(ls out/*.zip | head -1)
+          ZIP_NAME=$(basename "$ZIP_FILE")
+          echo "zip_name=$ZIP_NAME" >> $GITHUB_OUTPUT
+          echo "Found ZIP file: $ZIP_NAME"
+      - name: Upload ZIP artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.get_filename.outputs.zip_name }}
+          path: out/*.zip
+      - name: Upload to BuzzHeavier
+        id: upload-buzz
+        continue-on-error: true
+        env:
+          BUZZ_TOKEN: ${{ secrets.BUZZHEAVIER_TOKEN }}
+          TARGET_DIR_ID: "a91kcrtt3d2t"
+        run: |
+          ZIP_NAME="${{ steps.get_filename.outputs.zip_name }}"
+          echo "Uploading $ZIP_NAME to BuzzHeavier..."
+          curl -#o /dev/null \
+            -X PUT \
+            -T "out/$ZIP_NAME" \
+            -H "Authorization: Bearer $BUZZ_TOKEN" \
+            "https://w.buzzheavier.com/$TARGET_DIR_ID/$ZIP_NAME"
+          echo "Upload attempt finished. Check the job logs for curl's output."
