@@ -81,3 +81,11 @@ jobs:
         run: |
           source ./buildenv.sh ${{ matrix.target }}
           ./scripts/make_rom.sh --no-rom-zip
+
+      - name: Upload ZIP artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rom-${{ matrix.target }}
+          path: out/*.zip
+          retention-days: 7
+
