@@ -80,7 +80,7 @@ jobs:
       - name: Build ROM
         run: |
           source ./buildenv.sh ${{ matrix.target }}
-          ./scripts/make_rom.sh --no-rom-zip
+          ./scripts/make_rom.sh
 
       - name: Upload ZIP artifacts
         uses: actions/upload-artifact@v4
