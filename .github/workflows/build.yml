@@ -82,10 +82,20 @@ jobs:
           source ./buildenv.sh ${{ matrix.target }}
           ./scripts/make_rom.sh
 
+      - name: Get ZIP filename
+        id: get_filename
+        run: |
+          source ./buildenv.sh ${{ matrix.target }}
+          # Get the first zip file in out directory
+          ZIP_FILE=$(ls out/*.zip | head -1)
+          # Extract just the filename without path
+          ZIP_NAME=$(basename "$ZIP_FILE")
+          echo "zip_name=$ZIP_NAME" >> $GITHUB_OUTPUT
+          echo "Found ZIP file: $ZIP_NAME"
       - name: Upload ZIP artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: rom-${{ matrix.target }}
+          name: ${{ steps.get_filename.outputs.zip_name }}
           path: out/*.zip
           retention-days: 7
 
