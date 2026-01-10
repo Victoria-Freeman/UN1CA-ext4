@@ -364,7 +364,8 @@ system/priv-app/BixbyInterpreter
 "
 
 # Unused fonts
-SYSTEM_DEBLOAT+="$(find "$WORK_DIR/system" -type f -path "*/fonts/*" | grep -iE "(Chinese|Japanese|Korean|Arabic|Thai|Hindi)" | sed "s|$WORK_DIR/system/||g")"
+#SYSTEM_DEBLOAT+="$(find "$WORK_DIR/system" -type f -path "*/fonts/*" | grep -iE "(Chinese|Japanese|Korean|Arabic|Thai|Hindi)" | sed "s|$WORK_DIR/system/||g")"
+SYSTEM_DEBLOAT+="$(find "$WORK_DIR/system" -type f -path "*/fonts/*" | grep -iE "(Chinese|Japanese|Korean|Thai|Hindi)" | sed "s|$WORK_DIR/system/||g")"
 
 # Unused wallpapers
 SYSTEM_DEBLOAT+="$(find "$WORK_DIR/system" -type f -path "*/wallpaper/*" | tail -n +5 | sed "s|$WORK_DIR/system/||g")"
