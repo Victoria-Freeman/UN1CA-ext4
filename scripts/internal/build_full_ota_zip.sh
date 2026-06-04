@@ -227,6 +227,10 @@ cp -a "$SRC_DIR/prebuilts/bootable/deprecated-ota/updater" "$TMP_DIR/META-INF/co
 LOG "- Extracting target files"
 EVAL "unzip -o \"$TARGET_ZIP\" -d \"$TMP_DIR\"" || exit 1
 
+if [ -n "$GITHUB_ACTIONS" ]; then
+    rm -f "$TARGET_ZIP"
+fi
+
 BUILD_INFO="$(cat "$TMP_DIR/build_info.txt")"
 rm -f "$TMP_DIR/build_info.txt"
 

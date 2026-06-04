@@ -152,6 +152,10 @@ if $BUILD_ROM; then
     fi
 
     echo -n "$(GET_WORK_DIR_HASH)" > "$WORK_DIR/.completed"
+
+    if [ -n "$GITHUB_ACTIONS" ]; then
+        rm -rf "$APKTOOL_DIR"
+    fi
 fi
 
 if $BUILD_TARGET_FILES || $BUILD_FLASHABLE_ZIP; then
@@ -175,6 +179,10 @@ if $BUILD_TARGET_FILES || $BUILD_FLASHABLE_ZIP; then
         LOG_STEP_IN true "Creating flashable zip"
         "$SRC_DIR/scripts/build_flashable_zip.sh" "$OUT_DIR/$ZIP_FILE_NAME" || exit 1
         LOG_STEP_OUT
+    fi
+
+    if [ -n "$GITHUB_ACTIONS" ]; then
+        rm -rf "$WORK_DIR" "$OUT_DIR/$ZIP_FILE_NAME"
     fi
 fi
 

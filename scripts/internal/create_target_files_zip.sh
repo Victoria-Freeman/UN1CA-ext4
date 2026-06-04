@@ -62,10 +62,8 @@ GENERATE_BUILD_INFO()
     SOURCE_FIRMWARE_PATH="$(cut -d "/" -f 1 -s <<< "$SOURCE_FIRMWARE")_$(cut -d "/" -f 2 -s <<< "$SOURCE_FIRMWARE")"
     TARGET_FIRMWARE_PATH="$(cut -d "/" -f 1 -s <<< "$TARGET_FIRMWARE")_$(cut -d "/" -f 2 -s <<< "$TARGET_FIRMWARE")"
 
-    SOURCE_FINGERPRINT="$(GET_PROP "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/build.prop" "ro.system.build.fingerprint")"
-    SOURCE_FINGERPRINT="${SOURCE_FINGERPRINT//$(GET_PROP "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/build.prop" "ro.build.product")/$(GET_PROP "$FW_DIR/$SOURCE_FIRMWARE_PATH/vendor/build.prop" "ro.product.vendor.device")}"
-    TARGET_FINGERPRINT="$(GET_PROP "$FW_DIR/$TARGET_FIRMWARE_PATH/system/system/build.prop" "ro.system.build.fingerprint")"
-    TARGET_FINGERPRINT="${TARGET_FINGERPRINT//$(GET_PROP "$FW_DIR/$TARGET_FIRMWARE_PATH/system/system/build.prop" "ro.build.product")/$(GET_PROP "$FW_DIR/$TARGET_FIRMWARE_PATH/vendor/build.prop" "ro.product.vendor.device")}"
+    SOURCE_FINGERPRINT="$UNICA_SOURCE_FINGERPRINT"
+    TARGET_FINGERPRINT="$UNICA_TARGET_FINGERPRINT"
 
     {
         echo -n "device="
@@ -79,7 +77,8 @@ GENERATE_BUILD_INFO()
         echo "os_version=$(GET_PROP "system" "ro.build.version.release")"
         echo "oneui_version=$(GET_PROP "system" "ro.build.version.oneui")"
         echo "build_incremental=$(GET_PROP "system" "ro.build.version.incremental")"
-        echo "build_date=$(GET_PROP "system" "ro.build.date.utc")"
+        echo -n "build_date="
+        [ "$(GET_PROP "system" "ro.build.date.utc")" ] && GET_PROP "system" "ro.build.date.utc" || echo "$ROM_BUILD_TIMESTAMP"
         echo "security_patch=$(GET_PROP "system" "ro.build.version.security_patch")"
         echo "source_fingerprint=$SOURCE_FINGERPRINT"
         echo "target_fingerprint=$TARGET_FINGERPRINT"
@@ -115,7 +114,24 @@ OUTPUT_FILE="$1"
 [ -d "$TMP_DIR" ] && rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 
+# Extract fingerprints early so fw_dir can be deleted before heavy image building
+{
+    SOURCE_FIRMWARE_PATH="$(cut -d "/" -f 1 -s <<< "$SOURCE_FIRMWARE")_$(cut -d "/" -f 2 -s <<< "$SOURCE_FIRMWARE")"
+    UNICA_SOURCE_FINGERPRINT="$(GET_PROP "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/build.prop" "ro.system.build.fingerprint")"
+    UNICA_SOURCE_FINGERPRINT="${UNICA_SOURCE_FINGERPRINT//$(GET_PROP "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/build.prop" "ro.build.product")/$(GET_PROP "$FW_DIR/$SOURCE_FIRMWARE_PATH/vendor/build.prop" "ro.product.vendor.device")}"
+
+    TARGET_FIRMWARE_PATH="$(cut -d "/" -f 1 -s <<< "$TARGET_FIRMWARE")_$(cut -d "/" -f 2 -s <<< "$TARGET_FIRMWARE")"
+    UNICA_TARGET_FINGERPRINT="$(GET_PROP "$FW_DIR/$TARGET_FIRMWARE_PATH/system/system/build.prop" "ro.system.build.fingerprint")"
+    UNICA_TARGET_FINGERPRINT="${UNICA_TARGET_FINGERPRINT//$(GET_PROP "$FW_DIR/$TARGET_FIRMWARE_PATH/system/system/build.prop" "ro.build.product")/$(GET_PROP "$FW_DIR/$TARGET_FIRMWARE_PATH/vendor/build.prop" "ro.product.vendor.device")}"
+}
+
+# Delete fw_dir and odin_dir (on GHA) before heavy image building
+if [ -n "$GITHUB_ACTIONS" ]; then
+    rm -rf "$FW_DIR" "$ODIN_DIR"
+fi
+
 LOG_STEP_IN "- Building OS partitions"
+# Sort partitions with system last (largest) to minimise peak disk overlap
 while IFS= read -r f; do
     PARTITION=$(basename "$f")
     IS_VALID_PARTITION_NAME "$PARTITION" || continue
@@ -131,7 +147,12 @@ while IFS= read -r f; do
             -o "$TMP_DIR/$PARTITION.img" -m -S -s "$(_GET_PARTITION_SIZE "$PARTITION")" \
             "$WORK_DIR/$PARTITION" "$WORK_DIR/configs/file_context-$PARTITION" "$WORK_DIR/configs/fs_config-$PARTITION" || exit 1
     fi
-done < <(find "$WORK_DIR" -maxdepth 1 -type d)
+
+    # Source tree no longer needed after .img is built
+    PARTITION_SIZE="$(du -sh "$WORK_DIR/$PARTITION" 2>/dev/null | cut -f1)"
+    rm -rf "$WORK_DIR/$PARTITION"
+    [[ "$PARTITION" != "system" ]] && LOG "- Freed $PARTITION ($PARTITION_SIZE)"
+done < <(find "$WORK_DIR" -maxdepth 1 -mindepth 1 -type d | grep -v "/kernel$\|/configs$\|/system$" | LC_ALL=C sort; find "$WORK_DIR/system" -maxdepth 0 -type d 2>/dev/null)
 LOG_STEP_OUT
 
 if $TARGET_USE_DYNAMIC_PARTITIONS; then

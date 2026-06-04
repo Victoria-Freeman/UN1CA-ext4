@@ -461,6 +461,10 @@ EVAL "unzip -o \"$SOURCE_ZIP\" -d \"$TMP_DIR/source\"" || exit 1
 LOG "- Extracting target files"
 EVAL "unzip -o \"$TARGET_ZIP\" -d \"$TMP_DIR/target\"" || exit 1
 
+if [ -n "$GITHUB_ACTIONS" ]; then
+    rm -f "$SOURCE_ZIP" "$TARGET_ZIP"
+fi
+
 SOURCE_BUILD_INFO="$(cat "$TMP_DIR/source/build_info.txt")"
 TARGET_BUILD_INFO="$(cat "$TMP_DIR/target/build_info.txt")"
 
